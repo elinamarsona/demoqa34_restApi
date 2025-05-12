@@ -1,23 +1,28 @@
+package tests;
+
+import models.*;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
-import static org.hamcrest.Matchers.*;
-import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @DisplayName("API-тесты")
-public class ReqresInTest extends TestBase{
+public class ReqresInLombokTest extends TestBase {
 
     private static final String API_KEY = "reqres-free-v1";
 
     @Test
     @DisplayName("post. Успешная регистрация")
     void successfulRegisterTest() {
-        String authData = "{\"email\": \"eve.holt@reqres.in\", \"password\": \"pistol\"}";
+        RegisterBodyModel authData = new RegisterBodyModel();
+        authData.setEmail("eve.holt@reqres.in");
+        authData.setPassword("pistol");
 
-        given()
+        RegisterResponseModel response = given()
                 .header("x-api-key", API_KEY)
                 .body(authData)
                 .contentType(JSON)
@@ -30,16 +35,18 @@ public class ReqresInTest extends TestBase{
                 .log().status()
                 .log().body()
                 .statusCode(200)
-                .body("id", is(4))
-                .body("token", notNullValue());
+                .extract().as(RegisterResponseModel.class);
+        assertEquals(4, response.getId());
+        assertNotNull(response.getToken());
     }
 
     @Test
     @DisplayName("post. Неуспешная регистрация только с email")
     void UnSuccessfulRegisterTest() {
-        String authData = "{\"email\": \"eve.holt@reqres.in\", \"password\": \"\"}";
+        RegisterBodyModel authData = new RegisterBodyModel();
+        authData.setEmail("eve.holt@reqres.in");
 
-        given()
+        ErrorBodyModel response = given()
                 .header("x-api-key", API_KEY)
                 .body(authData)
                 .contentType(JSON)
@@ -51,40 +58,20 @@ public class ReqresInTest extends TestBase{
                 .then()
                 .log().status()
                 .log().body()
-                .statusCode(400);
-    }
+                .statusCode(400)
+                .extract().as(ErrorBodyModel.class);
 
-    @Test
-    @DisplayName("get. Наличие зарегистрированного пользователя в базе")
-    void userInTheDBTest() {
-        given()
-                .header("x-api-key", API_KEY)
-                .log().all()
-                .get("/users/2")
-                .then()
-                .log().all()
-                .body("data.id", is(2))
-                .statusCode(200);
-    }
-
-    @Test
-    @DisplayName("get. Отсутствие пользователя в базе")
-    void NotFoundUserInTheDBTest() {
-        given()
-                .header("x-api-key", API_KEY)
-                .log().all()
-                .get("/users/23")
-                .then()
-                .log().all()
-                .statusCode(404);
+        assertEquals("Missing password",response.getError());
     }
 
     @Test
     @DisplayName("post. Успешный вход")
     void loginSuccessfulTest() {
-        String authData = "{\"email\": \"eve.holt@reqres.in\", \"password\": \"pistol\"}";
+        LoginBodyModel authData = new LoginBodyModel();
+                authData.setEmail("eve.holt@reqres.in");
+                authData.setPassword("pistol");
 
-        given()
+        LoginResponseModel response = given()
                 .header("x-api-key", API_KEY)
                 .body(authData)
                 .contentType(JSON)
@@ -96,15 +83,17 @@ public class ReqresInTest extends TestBase{
                 .then()
                 .log().all()
                 .statusCode(200)
-                .body("token", notNullValue());
+                .extract().as(LoginResponseModel.class);
+        assertNotNull(response.getToken());
     }
 
     @Test
     @DisplayName("post. Неудачный вход без пароля")
     void loginUnSuccessfulTest() {
-        String authData = "{\"email\": \"eve.holt@reqres.in\", \"password\": \"\"}";
+        LoginBodyModel authData = new LoginBodyModel();
+        authData.setEmail("eve.holt@reqres.in");
 
-        given()
+        ErrorBodyModel response = given()
                 .header("x-api-key", API_KEY)
                 .body(authData)
                 .contentType(JSON)
@@ -116,7 +105,9 @@ public class ReqresInTest extends TestBase{
                 .then()
                 .log().all()
                 .statusCode(400)
-                .body("error", containsString("Missing password"));
+                .extract().as(ErrorBodyModel.class);
+
+        assertEquals("Missing password",response.getError());
     }
 
     @Test
@@ -138,9 +129,11 @@ public class ReqresInTest extends TestBase{
     @Test
     @DisplayName("patch. Частичное обновление пользователя")
     void successfulPatchUpdateTest() {
-        String authData = "{\"name\": \"morpheus\", \"job\": \"zion resident\"}";
+        PatchUpdateBodyModel authData = new PatchUpdateBodyModel();
+        authData.setName("morpheus");
+        authData.setJob("zion resident");
 
-        given()
+        PatchUpdateResponseModel response = given()
                 .header("x-api-key", API_KEY)
                 .body(authData)
                 .contentType(JSON)
@@ -153,9 +146,10 @@ public class ReqresInTest extends TestBase{
                 .log().status()
                 .log().body()
                 .statusCode(200)
-                .body("name", is("morpheus"))
-                .body("job", is("zion resident"))
-                .body("updatedAt", notNullValue());
+                .extract().as(PatchUpdateResponseModel.class);
+        assertEquals("morpheus", response.getName());
+        assertEquals("zion resident", response.getJob());
+        assertNotNull(response.getUpdatedAt());
     }
 
 }

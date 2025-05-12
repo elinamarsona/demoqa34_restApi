@@ -46,4 +46,9 @@ tasks.withType(Test) {
             exceptionFormat "short"
         }
     }
+
+    task AllApi(type: Test) {
+        useJUnitPlatform {
+            includeTags("AllApi")
+        }
 }

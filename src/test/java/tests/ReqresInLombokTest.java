@@ -1,10 +1,13 @@
 package tests;
 
+import io.qameta.allure.restassured.AllureRestAssured;
 import models.*;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 
+import static helpers.CustomAllureListener.withCustomTemplates;
+import static io.qameta.allure.Allure.step;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -22,22 +25,29 @@ public class ReqresInLombokTest extends TestBase {
         authData.setEmail("eve.holt@reqres.in");
         authData.setPassword("pistol");
 
-        RegisterResponseModel response = given()
-                .header("x-api-key", API_KEY)
-                .body(authData)
-                .contentType(JSON)
-                .log().uri()
+        RegisterResponseModel response = step("Main request", ()->
+                     given()
+                            .filter(withCustomTemplates())
+                            .log().uri()
+                            .log().body()
+                            .log().headers()
+                            .header("x-api-key", API_KEY)
+                            .body(authData)
+                            .contentType(JSON)
 
-                .when()
-                .post("/register")
+                            .when()
+                            .post("/register")
 
-                .then()
-                .log().status()
-                .log().body()
-                .statusCode(200)
-                .extract().as(RegisterResponseModel.class);
-        assertEquals(4, response.getId());
-        assertNotNull(response.getToken());
+                            .then()
+                            .log().status()
+                            .log().body()
+                            .statusCode(200)
+                            .extract().as(RegisterResponseModel.class));
+
+        step("Check response", ()-> {
+            assertEquals(4, response.getId());
+            assertNotNull(response.getToken());
+        });
     }
 
     @Test
@@ -51,6 +61,8 @@ public class ReqresInLombokTest extends TestBase {
                 .body(authData)
                 .contentType(JSON)
                 .log().uri()
+                .log().body()
+                .log().headers()
 
                 .when()
                 .post("/register")
@@ -75,13 +87,16 @@ public class ReqresInLombokTest extends TestBase {
                 .header("x-api-key", API_KEY)
                 .body(authData)
                 .contentType(JSON)
-                .log().all()
+                .log().uri()
+                .log().body()
+                .log().headers()
 
                 .when()
-                .log().all()
                 .post("/login")
+
                 .then()
-                .log().all()
+                .log().status()
+                .log().body()
                 .statusCode(200)
                 .extract().as(LoginResponseModel.class);
         assertNotNull(response.getToken());
@@ -97,13 +112,16 @@ public class ReqresInLombokTest extends TestBase {
                 .header("x-api-key", API_KEY)
                 .body(authData)
                 .contentType(JSON)
-                .log().all()
+                .log().uri()
+                .log().body()
+                .log().headers()
 
                 .when()
-                .log().all()
                 .post("/login")
+
                 .then()
-                .log().all()
+                .log().status()
+                .log().body()
                 .statusCode(400)
                 .extract().as(ErrorBodyModel.class);
 
@@ -116,13 +134,16 @@ public class ReqresInLombokTest extends TestBase {
 
         given()
                 .header("x-api-key", API_KEY)
-                .log().all()
+                .log().uri()
+                .log().body()
+                .log().headers()
 
                 .when()
-                .log().all()
                 .delete("/users/4")
+
                 .then()
-                .log().all()
+                .log().status()
+                .log().body()
                 .statusCode(204);
     }
 
@@ -138,6 +159,8 @@ public class ReqresInLombokTest extends TestBase {
                 .body(authData)
                 .contentType(JSON)
                 .log().uri()
+                .log().body()
+                .log().headers()
 
                 .when()
                 .patch("/users/2")

@@ -1,22 +1,17 @@
 package tests;
 
-import io.qameta.allure.restassured.AllureRestAssured;
 import models.*;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-
-import static helpers.CustomAllureListener.withCustomTemplates;
 import static io.qameta.allure.Allure.step;
 import static io.restassured.RestAssured.given;
-import static io.restassured.http.ContentType.JSON;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static specs.Specs.*;
 
 @DisplayName("API-тесты")
 public class ReqresInLombokTest extends TestBase {
-
-    private static final String API_KEY = "reqres-free-v1";
 
     @Test
     @DisplayName("post. Успешная регистрация")
@@ -25,26 +20,18 @@ public class ReqresInLombokTest extends TestBase {
         authData.setEmail("eve.holt@reqres.in");
         authData.setPassword("pistol");
 
-        RegisterResponseModel response = step("Main request", ()->
-                     given()
-                            .filter(withCustomTemplates())
-                            .log().uri()
-                            .log().body()
-                            .log().headers()
-                            .header("x-api-key", API_KEY)
-                            .body(authData)
-                            .contentType(JSON)
+        RegisterResponseModel response = step("Main request", () ->
+                given(requestSpec)
+                        .body(authData)
 
-                            .when()
-                            .post("/register")
+                        .when()
+                        .post("/register")
 
-                            .then()
-                            .log().status()
-                            .log().body()
-                            .statusCode(200)
-                            .extract().as(RegisterResponseModel.class));
+                        .then()
+                        .spec(responseSpec)
+                        .extract().as(RegisterResponseModel.class));
 
-        step("Check response", ()-> {
+        step("Check response", () -> {
             assertEquals(4, response.getId());
             assertNotNull(response.getToken());
         });
@@ -56,50 +43,41 @@ public class ReqresInLombokTest extends TestBase {
         RegisterBodyModel authData = new RegisterBodyModel();
         authData.setEmail("eve.holt@reqres.in");
 
-        ErrorBodyModel response = given()
-                .header("x-api-key", API_KEY)
-                .body(authData)
-                .contentType(JSON)
-                .log().uri()
-                .log().body()
-                .log().headers()
+        ErrorBodyModel response = step("Main request", () ->
+                given(requestSpec)
+                        .body(authData)
 
-                .when()
-                .post("/register")
+                        .when()
+                        .post("/register")
 
-                .then()
-                .log().status()
-                .log().body()
-                .statusCode(400)
-                .extract().as(ErrorBodyModel.class);
+                        .then()
+                        .spec(badResponseSpec)
+                        .extract().as(ErrorBodyModel.class));
 
-        assertEquals("Missing password",response.getError());
+        step("Check response", () ->
+                assertEquals("Missing password", response.getError()));
     }
 
     @Test
     @DisplayName("post. Успешный вход")
     void loginSuccessfulTest() {
         LoginBodyModel authData = new LoginBodyModel();
-                authData.setEmail("eve.holt@reqres.in");
-                authData.setPassword("pistol");
+        authData.setEmail("eve.holt@reqres.in");
+        authData.setPassword("pistol");
 
-        LoginResponseModel response = given()
-                .header("x-api-key", API_KEY)
-                .body(authData)
-                .contentType(JSON)
-                .log().uri()
-                .log().body()
-                .log().headers()
+        LoginResponseModel response = step("Main request", () ->
+                given(requestSpec)
+                        .body(authData)
 
-                .when()
-                .post("/login")
+                        .when()
+                        .post("/login")
 
-                .then()
-                .log().status()
-                .log().body()
-                .statusCode(200)
-                .extract().as(LoginResponseModel.class);
-        assertNotNull(response.getToken());
+                        .then()
+                        .spec(responseSpec)
+                        .extract().as(LoginResponseModel.class));
+
+        step("Check response", () ->
+                assertNotNull(response.getToken()));
     }
 
     @Test
@@ -108,43 +86,35 @@ public class ReqresInLombokTest extends TestBase {
         LoginBodyModel authData = new LoginBodyModel();
         authData.setEmail("eve.holt@reqres.in");
 
-        ErrorBodyModel response = given()
-                .header("x-api-key", API_KEY)
-                .body(authData)
-                .contentType(JSON)
-                .log().uri()
-                .log().body()
-                .log().headers()
+        ErrorBodyModel response = step("Main request", () ->
+                given(requestSpec)
+                        .body(authData)
 
-                .when()
-                .post("/login")
+                        .when()
+                        .post("/login")
 
-                .then()
-                .log().status()
-                .log().body()
-                .statusCode(400)
-                .extract().as(ErrorBodyModel.class);
+                        .then()
+                        .spec(badResponseSpec)
+                        .extract().as(ErrorBodyModel.class));
 
-        assertEquals("Missing password",response.getError());
+        step("Check response", () ->
+                assertEquals("Missing password", response.getError()));
     }
 
     @Test
     @DisplayName("delete. Удалить существующего пользователя")
     void deleteTest() {
+        step("Main request", () -> {
+            given(requestSpec)
 
-        given()
-                .header("x-api-key", API_KEY)
-                .log().uri()
-                .log().body()
-                .log().headers()
+                    .when()
+                    .delete("/users/4")
 
-                .when()
-                .delete("/users/4")
-
-                .then()
-                .log().status()
-                .log().body()
-                .statusCode(204);
+                    .then()
+                    .spec(deleteResponseSpec);
+        });
+        step("Check response", () -> {
+        });
     }
 
     @Test
@@ -154,25 +124,22 @@ public class ReqresInLombokTest extends TestBase {
         authData.setName("morpheus");
         authData.setJob("zion resident");
 
-        PatchUpdateResponseModel response = given()
-                .header("x-api-key", API_KEY)
-                .body(authData)
-                .contentType(JSON)
-                .log().uri()
-                .log().body()
-                .log().headers()
+        PatchUpdateResponseModel response = step("Main request", () ->
+                given(requestSpec)
+                        .body(authData)
 
-                .when()
-                .patch("/users/2")
+                        .when()
+                        .patch("/users/2")
 
-                .then()
-                .log().status()
-                .log().body()
-                .statusCode(200)
-                .extract().as(PatchUpdateResponseModel.class);
-        assertEquals("morpheus", response.getName());
-        assertEquals("zion resident", response.getJob());
-        assertNotNull(response.getUpdatedAt());
+                        .then()
+                        .spec(responseSpec)
+                        .extract().as(PatchUpdateResponseModel.class));
+
+        step("Check response", () -> {
+            assertEquals("morpheus", response.getName());
+            assertEquals("zion resident", response.getJob());
+            assertNotNull(response.getUpdatedAt());
+        });
     }
 
 }
